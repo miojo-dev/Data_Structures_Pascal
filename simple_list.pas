@@ -1,67 +1,86 @@
-Program Pzim ;
+Program simple_list;
+uses crt;
 
 var pointer:byte;
 var list:array[1..5] of integer;
+var input:integer;
 
-procedure include(list:array[1..5] of integer, is_full:boolean, num:integer, pointer:integer);
+procedure include(full:boolean);
+var num:integer;
 begin
-  if (is_full = false) then
-  begin
-    list[pointer] := num;
-    pointer := pointer + 1;
-  end
-  else
-  begin
-    writeln('list full');
-  end
+    if (full = false) then
+    begin
+        write('number: ');
+        readln(num);
+        
+        list[pointer] := num;
+        pointer := pointer + 1;
+        
+        ClrScr;
+        writeln(num, ' added to the list');
+    end
+    else
+    begin
+        ClrScr;
+        writeln('list full');
+    end
 end;
 
-procedure remove(list:array[1..5] of integer, is_empty:boolean, pointer:integer);
+procedure remove(empty:boolean);
 var i:integer;
 begin
 	i := 1;
-  if (is_empty = false) then
-  begin
-    while i < 5 do
+    if (empty = false) then
     begin
-      list[i] := list[i + 1];
-      i := i + 1;
-    end;
-    pointer := pointer - 1;
-  end
-  else
-  begin
-    writeln('empty list');
-  end
+        ClrScr;
+        writeln(list[1], ' removed');
+        
+        while i < 5 do
+        begin
+            list[i] := list[i + 1];
+            i := i + 1;
+        end;
+        
+        pointer := pointer - 1;
+    end
+    else
+    begin
+        ClrScr;
+        writeln('empty list');
+    end
 end;
 
-function consult(list:array[1..5] of integer, is_empty:boolean):integer;
+procedure consult(empty:boolean);
 begin
-  if (is_empty = false) then
-  begin
-    consult := list[1];
-  end
-  else
-  begin
-    writeln('empty list');
-  end
+    if (empty = false) then
+    begin
+        ClrScr;
+        writeln(list[1]);
+    end
+    else
+    begin
+        ClrScr;
+        writeln('empty list');
+    end
 end;
 
-procedure _write(list:array[1..5] of integer);  
+procedure _write();  
 var i:integer;
 begin
-  i := 1;
-  writeln(' ');
-  while i <= 5 do
-  begin
-    write(list[i], '|');
-    i := i + 1;
-  end
+    i := 1;
+    
+    ClrScr;
+    
+    while i < pointer do
+    begin
+        write(list[i], '|');
+        i := i + 1;
+    end
 end;
 
-function full(list:array[1..5] of integer, pointer:integer):boolean;
+function full():boolean;
 begin
-	if (pointer > legth(list)) then
+	if (pointer > length(list)) then
 	begin
 		full := true;
 	end
@@ -71,7 +90,7 @@ begin
 	end
 end;
 
-function empty(pointer:integer):boolean;
+function empty():boolean;
 begin
 	if (pointer <= 1) then
 	begin
@@ -79,10 +98,42 @@ begin
 	end
 	else
 	begin
-	 empty := false;
+	    empty := false;
 	end
 end;
 
+procedure menu();
 Begin
-  
+    writeln;
+    writeln('*====================*');
+    writeln('*  Choose an action  *');
+    writeln('*1 - include         *');
+    writeln('*2 - remove          *');
+    writeln('*3 - consult         *');
+    writeln('*4 - write           *');
+    writeln('*0 - quit            *');
+    writeln('*====================*');
+    readln(input);
+    
+    case input of
+        1: include(full());
+        2: remove(empty());
+        3: consult(empty());
+        4: _write();
+    end;
+    
+    if (input = 0) then
+    Begin
+        writeln('exiting program...')
+    End;
+    else
+    Begin
+        menu();
+    End;
+End;
+
+Begin
+    pointer := 1;
+    
+    menu();
 End.
