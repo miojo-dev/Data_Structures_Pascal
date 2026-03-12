@@ -1,0 +1,158 @@
+name: 🔄 Update README with Onefetch
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    name: Gerar Onefetch e atualizar README
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🦀 Instalar Onefetch
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/o2sh/onefetch/releases/latest \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+          curl -sL "https://github.com/o2sh/onefetch/releases/download/${VERSION}/onefetch_amd64.deb" \
+            -o onefetch.deb
+          sudo dpkg -i onefetch.deb
+
+      - name: 🧊 Instalar Freeze
+        run: |
+          go install github.com/charmbracelet/freeze@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: 🎨 Gerar SVG com onefetch + freeze
+        run: |
+          # FIX CORES: script cria pseudo-TTY sem pacotes extras
+          # onefetch mantém cores ANSI reais dentro de um TTY
+          script -q -c "onefetch -d pending" /dev/null \
+            | freeze --language ansi --theme none --output onefetch.svg
+
+      - name: 📊 Adicionar barra de linguagens ao SVG
+        run: |
+          onefetch --output json -d pending > /tmp/onefetch.json 2>/dev/null || echo "{}" > /tmp/onefetch.json
+
+          python3 << 'PYEOF'
+          import json, re
+
+          LANG_COLORS = {
+              'python':'#3572A5','javascript':'#f1e05a','typescript':'#2b7489',
+              'rust':'#dea584','go':'#00ADD8','java':'#b07219','c':'#555555',
+              'c++':'#f34b7d','c#':'#178600','ruby':'#701516','php':'#4F5D95',
+              'swift':'#ffac45','kotlin':'#A97BFF','dart':'#00B4AB','scala':'#c22d40',
+              'html':'#e34c26','css':'#563d7c','shell':'#89e051','bash':'#89e051',
+              'yaml':'#cb171e','vue':'#41b883','svelte':'#ff3e00','r':'#198CE7',
+          }
+
+          def lang_color(name): return LANG_COLORS.get(name.lower(), '#8b949e')
+
+          def lang_info(l):
+              if isinstance(l, list):   return l[0], float(l[1]) if len(l)>1 else 0
+              if isinstance(l, dict):   return l.get('name','?'), float(l.get('percentage', 0))
+              return str(l), 0
+
+          with open('/tmp/onefetch.json') as f:
+              data = json.load(f)
+          languages = data.get('languages', [])
+
+          with open('onefetch.svg') as f:
+              svg = f.read()
+
+          w_match = re.search(r'<svg[^>]+width=["\']([0-9.]+)', svg)
+          h_match = re.search(r'<svg[^>]+height=["\']([0-9.]+)', svg)
+          svg_w = int(float(w_match.group(1))) if w_match else 800
+          svg_h = int(float(h_match.group(1))) if h_match else 400
+
+          PAD, BAR_H, LEG_H = 20, 10, 20
+          ROWS        = max(1, (len(languages) + 3) // 4)
+          BAR_BLOCK_H = PAD + BAR_H + PAD//2 + ROWS * LEG_H + PAD
+          total_h     = svg_h + BAR_BLOCK_H
+          bar_w       = svg_w - PAD * 2
+
+          parts = [
+              f'  <g transform="translate(0,{svg_h})">',
+              f'    <rect width="{svg_w}" height="{BAR_BLOCK_H}" fill="#0d1117"/>',
+              f'    <rect x="{PAD}" y="{PAD}" width="{bar_w}" height="{BAR_H}" rx="5" fill="#21262d"/>',
+          ]
+
+          total_pct = sum(lang_info(l)[1] for l in languages) or 1
+          cx = PAD
+          for lang in languages:
+              name, pct = lang_info(lang)
+              w = int((pct / total_pct) * bar_w)
+              if w > 0:
+                  parts.append(f'    <rect x="{cx}" y="{PAD}" width="{w}" height="{BAR_H}" rx="3" fill="{lang_color(name)}"/>')
+              cx += w
+
+          lx = PAD
+          ly = PAD + BAR_H + PAD//2 + LEG_H
+          for lang in languages:
+              name, pct = lang_info(lang)
+              color = lang_color(name)
+              label = f'{name.replace("&","&amp;").replace("<","&lt;").replace("+","&#43;").replace("#","&#35;")} {pct:.1f}%'
+              parts.append(f'    <circle cx="{lx+5}" cy="{ly-5}" r="5" fill="{color}"/>')
+              parts.append(f'    <text x="{lx+14}" y="{ly}" font-family="Courier New,monospace" font-size="12px" fill="#c9d1d9">{label}</text>')
+              lx += len(name) * 7.5 + 60
+              if lx > svg_w - 100:
+                  lx = PAD; ly += LEG_H
+
+          parts.append('  </g>')
+
+          new_svg = svg.replace('</svg>', '\n'.join(parts) + '\n</svg>')
+          new_svg = re.sub(r'(<svg[^>]+height=["\'])([0-9.]+)', lambda m: m.group(1) + str(total_h), new_svg, count=1)
+
+          with open('onefetch.svg', 'w') as f:
+              f.write(new_svg)
+          print(f"SVG final: {svg_w}x{total_h}px | {len(languages)} linguagens")
+          PYEOF
+
+      - name: 📝 Atualizar README.md
+        run: |
+          python3 << 'EOF'
+          import re
+          try:
+              with open("README.md","r",encoding="utf-8") as f: readme = f.read()
+          except FileNotFoundError:
+              readme = ""
+          new_block = "<!-- ONEFETCH_START -->\n![Onefetch](./onefetch.svg)\n<!-- ONEFETCH_END -->"
+          pattern = r"<!-- ONEFETCH_START -->.*?<!-- ONEFETCH_END -->"
+          if re.search(pattern, readme, re.DOTALL):
+              updated = re.sub(pattern, new_block, readme, flags=re.DOTALL)
+          else:
+              updated = readme.rstrip() + "\n\n" + new_block + "\n"
+          with open("README.md","w",encoding="utf-8") as f: f.write(updated)
+          print("README.md atualizado!")
+          EOF
+
+      - name: 🔍 Verificar mudanças
+        id: check_changes
+        run: |
+          if git diff --quiet README.md onefetch.svg; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 💾 Commit e Push
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md onefetch.svg
+          git commit -m "docs: atualiza estatísticas do repo via onefetch [skip ci]"
+          git push
