@@ -5,7 +5,7 @@ var pointer:byte;
 var list:array[1..5] of integer;
 var input:integer;
 
-procedure include(full:boolean);
+procedure include(list:array of integer; pointer:integer; full:boolean);
 var num:integer;
 begin
     if (full = false) then
@@ -26,7 +26,7 @@ begin
     end
 end;
 
-procedure remove(empty:boolean);
+procedure remove(list:array of integer; pointer:integer; empty:boolean);
 var i:integer;
 begin
 	i := 1;
@@ -50,7 +50,7 @@ begin
     end
 end;
 
-procedure consult(empty:boolean);
+procedure consult(list:array of integer; empty:boolean);
 begin
     if (empty = false) then
     begin
@@ -64,7 +64,7 @@ begin
     end
 end;
 
-procedure _write();  
+procedure _write(list:array of integer; pointer:integer);
 var i:integer;
 begin
     i := 1;
@@ -78,7 +78,7 @@ begin
     end
 end;
 
-function full():boolean;
+function full(list:array of integer; pointer:integer):boolean;
 begin
 	if (pointer > length(list)) then
 	begin
@@ -90,7 +90,7 @@ begin
 	end
 end;
 
-function empty():boolean;
+function empty(pointer:integer):boolean;
 begin
 	if (pointer <= 1) then
 	begin
@@ -116,10 +116,10 @@ Begin
     readln(input);
     
     case input of
-        1: include(full());
-        2: remove(empty());
-        3: consult(empty());
-        4: _write();
+        1: include(list; pointer; full(list; pointer));
+        2: remove(list; pointer; empty(pointer));
+        3: consult(list; empty(pointer));
+        4: _write(list; pointer);
     end;
     
     if (input = 0) then
