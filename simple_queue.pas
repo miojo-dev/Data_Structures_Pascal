@@ -1,11 +1,11 @@
-Program simple_list;
+Program simple_queue;
 uses crt;
 
 var pointer:byte;
-var list:array[1..5] of integer;
+var queue:array[1..5] of integer;
 var input:integer;
 
-procedure include(list:array of integer; pointer:integer; full:boolean);
+procedure include(queue:array of integer; pointer:integer; full:boolean);
 var num:integer;
 begin
     if (full = false) then
@@ -13,31 +13,31 @@ begin
         write('number: ');
         readln(num);
         
-        list[pointer] := num;
+        queue[pointer] := num;
         pointer := pointer + 1;
         
         ClrScr;
-        writeln(num, ' added to the list');
+        writeln(num, ' added to the queue');
     end
     else
     begin
         ClrScr;
-        writeln('list full');
+        writeln('queue full');
     end
 end;
 
-procedure remove(list:array of integer; pointer:integer; empty:boolean);
+procedure remove(queue:array of integer; pointer:integer; empty:boolean);
 var i:integer;
 begin
 	i := 1;
     if (empty = false) then
     begin
         ClrScr;
-        writeln(list[1], ' removed');
+        writeln(queue[1], ' removed');
         
         while i < 5 do
         begin
-            list[i] := list[i + 1];
+            queue[i] := queue[i + 1];
             i := i + 1;
         end;
         
@@ -46,25 +46,25 @@ begin
     else
     begin
         ClrScr;
-        writeln('empty list');
+        writeln('empty queue');
     end
 end;
 
-procedure consult(list:array of integer; empty:boolean);
+procedure consult(queue:array of integer; empty:boolean);
 begin
     if (empty = false) then
     begin
         ClrScr;
-        writeln(list[1]);
+        writeln(queue[1]);
     end
     else
     begin
         ClrScr;
-        writeln('empty list');
+        writeln('empty queue');
     end
 end;
 
-procedure _write(list:array of integer; pointer:integer);
+procedure _write(queue:array of integer; pointer:integer);
 var i:integer;
 begin
     i := 1;
@@ -73,14 +73,14 @@ begin
     
     while i < pointer do
     begin
-        write(list[i], '|');
+        write(queue[i], '|');
         i := i + 1;
     end
 end;
 
-function full(list:array of integer; pointer:integer):boolean;
+function full(queue:array of integer; pointer:integer):boolean;
 begin
-	if (pointer > length(list)) then
+	if (pointer > length(queue)) then
 	begin
 		full := true;
 	end
@@ -116,10 +116,10 @@ Begin
     readln(input);
     
     case input of
-        1: include(list; pointer; full(list; pointer));
-        2: remove(list; pointer; empty(pointer));
-        3: consult(list; empty(pointer));
-        4: _write(list; pointer);
+        1: include(queue; pointer; full(queue; pointer));
+        2: remove(queue; pointer; empty(pointer));
+        3: consult(queue; empty(pointer));
+        4: _write(queue; pointer);
     end;
     
     if (input = 0) then
