@@ -116,10 +116,10 @@ Begin
     readln(input);
     
     case input of
-        1: include(queue; pointer; full(queue; pointer));
-        2: remove(queue; pointer; empty(pointer));
-        3: consult(queue; empty(pointer));
-        4: _write(queue; pointer);
+        1: include(queue, pointer, full(queue, pointer));
+        2: remove(queue, pointer, empty(pointer));
+        3: consult(queue, empty(pointer));
+        4: _write(queue, pointer);
     end;
     
     if (input = 0) then
