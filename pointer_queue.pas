@@ -10,6 +10,10 @@ type
         next : TNode;
     end;
 
+var option : byte;
+    num : TInfo;
+    num_queue : TElement;
+
 procedure ReadInfo(var info : TInfo);
 begin
     clrscr;
@@ -94,5 +98,34 @@ begin
 end;
 
 begin
+    option := 1;
+    CreateQueue(num_queue);
     
+    while option <> 0 do
+    begin
+       clrscr;
+       writeln ('0 - Exit');
+       writeln ('1 - Include');
+       writeln ('2 - Remove');
+       writeln ('3 - Count elements');
+       readln (option);
+       writeln;
+       
+       case option of
+        1:
+        begin
+            ReadInfo(num);
+            Include(num_queue, num);
+        end;
+        
+        2:
+        begin
+            Remove(num_queue);
+        end;
+        
+        3:
+        begin
+            writeln(CountElements(num_queue), ' elements');
+            readkey;
+        end;
 end.
